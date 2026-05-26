@@ -167,6 +167,62 @@
       background-color: #666;  /* Darker grey on hover */
     }
 
+    .level-toggles {
+      display: inline-flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+
+    .level-toggle-title {
+      font-weight: 600;
+    }
+
+    .level-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .level-switch input {
+      display: none;
+    }
+
+    .slider {
+      position: relative;
+      width: 34px;
+      height: 18px;
+      border-radius: 999px;
+      background-color: #ccc;
+      transition: background-color 0.2s;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 2px;
+      top: 2px;
+      border-radius: 50%;
+      background-color: white;
+      transition: transform 0.2s;
+    }
+
+    .level-switch input:checked + .slider {
+      background-color: #555;
+    }
+
+    .level-switch input:checked + .slider::before {
+      transform: translateX(16px);
+    }
+
+    .level-name {
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -185,12 +241,28 @@
     </ul>
   </nav>
 
-  <div style="display:inline-flex; gap:8px; align-items:center;">
-    <label>TOGGLE LEVELS:</label>
-    <label><input type="checkbox" checked onchange="toggleLabels('foundational', this.checked)"> foundational</label>
-    <label><input type="checkbox" checked onchange="toggleLabels('intermediate', this.checked)"> intermediate</label>
-    <label><input type="checkbox" checked onchange="toggleLabels('advanced', this.checked)"> advanced</label>
-    <label><input type="checkbox" checked onchange="toggleLabels('expert', this.checked)"> expert</label>
+  <div class="level-toggles">
+    <span class="level-toggle-title">Show or hide levels:</span>
+    <label class="level-switch">
+      <input type="checkbox" checked onchange="toggleLabels('foundational', this.checked)">
+      <span class="slider"></span>
+      <span class="level-name foundational">foundational</span>
+    </label>
+    <label class="level-switch">
+      <input type="checkbox" checked onchange="toggleLabels('intermediate', this.checked)">
+      <span class="slider"></span>
+      <span class="level-name intermediate">intermediate</span>
+    </label>
+    <label class="level-switch">
+      <input type="checkbox" checked onchange="toggleLabels('advanced', this.checked)">
+      <span class="slider"></span>
+      <span class="level-name advanced">advanced</span>
+    </label>
+    <label class="level-switch">
+      <input type="checkbox" checked onchange="toggleLabels('expert', this.checked)">
+      <span class="slider"></span>
+      <span class="level-name expert">expert</span>
+    </label>
   </div>
 
   <!-- Management Tab (MANAGING RESEARCH) -->
