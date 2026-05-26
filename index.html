@@ -2734,9 +2734,21 @@ function generateSpiderChart() {
   const scores = [];
 
   categories.forEach(section => {
-    const catId = section.id;
-    labels.push(catId);
+    const categoryNames = {
+      management: "Managing research",
+      impact: "Making an impact",
+      selfmanagement: "Self-management",
+      creativity: "Cognitive abilities",
+      collaboration: "Working with others",
+      tools: "Managing research tools",
+      research: "Doing research"
+    };
 
+    const catId = section.id;
+    const catName = categoryNames[catId] || catId;
+
+    labels.push(catName);
+    
     const checkboxes = section.querySelectorAll("input[type='checkbox'][data-level]");
 
     let maxSelectedLevel = 0;
