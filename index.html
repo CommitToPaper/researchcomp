@@ -2737,44 +2737,45 @@ function generateSpiderChart() {
     const catId = section.id;
     labels.push(catId);
 
-    const fieldsets = section.querySelectorAll("fieldset");
+    const checkboxes = section.querySelectorAll("input[type='checkbox'][data-level]");
 
-    let total = 0;
-    let count = 0;
+    let maxSelectedLevel = 0;
     let hasMissingFoundational = false;
-    let hasMissingLowerLevel = false;
+    let hasMissingIntermediate = false;
+    let hasMissingAdvanced = false;
 
-    fieldsets.forEach(fs => {
-      const checkboxes = fs.querySelectorAll("input[type='checkbox'][data-level]");
+    checkboxes.forEach(cb => {
+      const level = cb.dataset.level;
+      const value = LEVEL_SCORES[level] || 0;
 
-      checkboxes.forEach(cb => {
-        const level = cb.dataset.level;
-        const value = LEVEL_SCORES[level] || 0;
+      if (cb.checked && value > maxSelectedLevel) {
+        maxSelectedLevel = value;
+      }
 
-        if (cb.checked) {
-          total += value;
-          count += 1;
-        } else {
-          if (level === "Foundational") {
-            hasMissingFoundational = true;
-          }
+      if (!cb.checked && level === "Foundational") {
+        hasMissingFoundational = true;
+      }
 
-          if (value < 3) {
-            hasMissingLowerLevel = true;
-          }
-        }
-      });
+      if (!cb.checked && level === "Intermediate") {
+        hasMissingIntermediate = true;
+      }
+
+      if (!cb.checked && level === "Advanced") {
+        hasMissingAdvanced = true;
+      }
     });
 
-    let avg = count > 0 ? total / count : 0;
+    let score = maxSelectedLevel;
 
     if (hasMissingFoundational) {
-      avg = Math.min(avg, 2);
-    } else if (hasMissingLowerLevel) {
-      avg = Math.min(avg, 3);
+      score = Math.min(score, 2);
+    } else if (hasMissingIntermediate) {
+      score = Math.min(score, 3);
+    } else if (hasMissingAdvanced) {
+      score = Math.min(score, 4);
     }
 
-    scores.push(parseFloat(avg.toFixed(2)));
+    scores.push(score);
   });
 
   const chartElement = document.getElementById("competenceRadarChart");
@@ -2830,7 +2831,7 @@ function generateSpiderChart() {
                 val < 3.5 ? "Advanced" :
                 "Expert";
 
-              return `Avg Score: ${val.toFixed(2)} (${level})`;
+              return `Score: ${val.toFixed(2)} (${level})`;
             }
           }
         }
