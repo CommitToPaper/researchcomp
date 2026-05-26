@@ -2361,24 +2361,27 @@
   <!-- Report Tab: When selected, the summary is generated automatically -->
   <div id="report" class="tab-content">
     <div id="title">
-    <h2>Summary of self-evaluation with ResearchComp</h2>
-    <button id="copySummaryBtn">📋 COPY THE SUMMARY</button> 
-    <button id="sendEmailBtn">✉️ EMAIL THE SUMMARY</button> 
-    <button id="downloadHtmlBtn">💾 SAVE FILE WITH ANSWERS</button>
-    <button id="generateSpiderMap" type="button">Generate Spider Map</button>
-    <button id="downloadPDF" type="button" style="display:none;">Download PDF</button>
-    <canvas id="competenceRadarChart" style="display:none;"></canvas>
+      <h2>Summary of self-evaluation with ResearchComp</h2>
+      <button id="copySummaryBtn">📋 COPY THE SUMMARY</button> 
+      <button id="sendEmailBtn">✉️ EMAIL THE SUMMARY</button> 
+      <button id="downloadHtmlBtn">💾 SAVE FILE WITH ANSWERS</button>
+      <button id="generateSpiderMap">🕸️ Generate Spider Map</button>
+      <button id="downloadPDF">📕 Download PDF</button>
     </div>
     <div id="summary"></div>
-  </div>
-
-  <div id="questionModal" class="hidden" style="display:none;">
-    <button id="closeModal" type="button">Close</button>
-    <canvas id="detailRadarChart"></canvas>
-    <div id="missingGroupListTitle">
-      <p>Click a point on the chart to view missing items for that group.</p>
-    </div>
-    <div id="missingGroupList"></div>
+    <div id="missingGroupListTitle"></div>
+    <canvas id="competenceRadarChart" width="400" height="400" style="max-width: 1500px; max-height: 800px; margin-top: 20px;"></canvas>
+    <div id="competenceDetails" style="margin-top: 20px;"></div>
+    <!-- Modal for Question Details -->
+    <div id="questionModal" class="modal hidden">
+       <div class="modal-content">
+          <span id="closeModal" class="close-button">&times;</span>
+          <canvas id="detailRadarChart" width="400" height="400" style="max-width: 1500px; max-height: 800px; margin-top: 20px;"></canvas>
+          <span class="Apple-converted-space">   </span>
+          <div id="missingGroupList" style="max-height: 500px; overflow-y: auto; margin-top: 10px;"></div>
+          <div id="questionList"></div>
+        </div>
+     </div>
   </div>
   
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
