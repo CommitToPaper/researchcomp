@@ -2362,9 +2362,23 @@
   <div id="report" class="tab-content">
     <div id="title">
     <h2>Summary of self-evaluation with ResearchComp</h2>
-    <button id="copySummaryBtn">📋 COPY THE SUMMARY</button> <button id="sendEmailBtn">✉️ EMAIL THE SUMMARY</button> <button id="downloadHtmlBtn">💾 SAVE FILE WITH ANSWERS</button>
+    <button id="copySummaryBtn">📋 COPY THE SUMMARY</button> 
+    <button id="sendEmailBtn">✉️ EMAIL THE SUMMARY</button> 
+    <button id="downloadHtmlBtn">💾 SAVE FILE WITH ANSWERS</button>
+    <button id="generateSpiderMap" type="button">Generate Spider Map</button>
+    <button id="downloadPDF" type="button" style="display:none;">Download PDF</button>
+    <canvas id="competenceRadarChart" style="display:none;"></canvas>
     </div>
     <div id="summary"></div>
+  </div>
+
+  <div id="questionModal" class="hidden" style="display:none;">
+    <button id="closeModal" type="button">Close</button>
+    <canvas id="detailRadarChart"></canvas>
+    <div id="missingGroupListTitle">
+      <p>Click a point on the chart to view missing items for that group.</p>
+    </div>
+    <div id="missingGroupList"></div>
   </div>
   
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
