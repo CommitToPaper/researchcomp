@@ -2383,56 +2383,72 @@
 /* ========================
    TAB SWITCHING + SUMMARY
    ======================== */
+
 const menuLinks = document.querySelectorAll("nav ul li a");
 
 menuLinks.forEach(link => {
   link.addEventListener("click", function(e) {
     e.preventDefault();
-    // Remove active class from all menu links
+
     menuLinks.forEach(item => item.classList.remove("active"));
-    // Hide all tab contents
     document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
 
-    // Activate clicked link and corresponding tab
     this.classList.add("active");
-    const target = this.getAttribute("data-target");
-    document.getElementById(target).classList.add("active");
 
-    document.getElementById("competenceRadarChart").style.display = "none";
-    document.getElementById("downloadPDF").style.display = "none";
-    const summary = document.getElementById("summary")
-    if (summary) {
-      summary.classList.remove("hidden");
+    const target = this.getAttribute("data-target");
+    const targetTab = document.getElementById(target);
+
+    if (targetTab) {
+      targetTab.classList.add("active");
     }
-    
-    // If Report tab is selected, generate summary automatically
+
+    const chart = document.getElementById("competenceRadarChart");
+    const summary = document.getElementById("summary");
+    const spiderButton = document.getElementById("generateSpiderMap");
+
+    if (chart) {
+      chart.style.display = "none";
+    }
+
+    if (summary) {
+      summary.style.display = "block";
+    }
+
+    if (spiderButton) {
+      spiderButton.textContent = "🕸️ MAKE SPIDER MAP";
+    }
+
     if (target === "report") {
       generateSummary();
     }
   });
 });
 
-// Generate summary function
+
+/* ========================
+   GENERATE SUMMARY
+   ======================== */
+
 function generateSummary() {
   const allTabContents = document.querySelectorAll(".tab-content");
   let finalSummary = "";
 
-  // Go through each tab (skip #report)
   allTabContents.forEach(tab => {
     if (tab.id === "report") return;
 
     const topicHeading = tab.querySelector("h2");
-    if (!topicHeading) return; // safety check
+    if (!topicHeading) return;
 
     const topicName = topicHeading.textContent.trim();
     const fieldsets = tab.querySelectorAll("fieldset");
+
     let topicHasSelectedItems = false;
     let topicSummary = "";
 
-    // Each fieldset is a subtopic
     fieldsets.forEach(fieldset => {
       const subtopicName = fieldset.getAttribute("data-topic") || "Untitled Subtopic";
-      const checkboxes = fieldset.querySelectorAll("input[type='checkbox']:checked");
+      const checkboxes = fieldset.querySelectorAll("input[type='checkbox'][data-level]:checked");
+
       const grouped = {
         "Foundational": [],
         "Intermediate": [],
@@ -2440,18 +2456,19 @@ function generateSummary() {
         "Expert": []
       };
 
-      // Collect checked items by level
       checkboxes.forEach(box => {
         const level = box.getAttribute("data-level");
+
         if (!grouped[level]) {
           console.warn(`Unknown level: ${level}`, box);
           return;
         }
+
         grouped[level].push(box.value);
       });
 
-      // Build subtopic summary if any checked
-      let subtopicSummaryParts = [];
+      const subtopicSummaryParts = [];
+
       ["Foundational", "Intermediate", "Advanced", "Expert"].forEach(level => {
         if (grouped[level].length > 0) {
           subtopicSummaryParts.push(
@@ -2462,6 +2479,7 @@ function generateSummary() {
 
       if (subtopicSummaryParts.length > 0) {
         topicHasSelectedItems = true;
+
         topicSummary += `
           <p>
             <strong>${subtopicName}</strong><br>
@@ -2470,7 +2488,6 @@ function generateSummary() {
       }
     });
 
-    // If this topic had selected items, add a heading + subtopic summaries
     if (topicHasSelectedItems) {
       finalSummary += `<h3>${topicName}</h3>${topicSummary}`;
     }
@@ -2479,131 +2496,219 @@ function generateSummary() {
   if (!finalSummary) {
     finalSummary = "<p>No options selected.</p>";
   }
+
   document.getElementById("summary").innerHTML = finalSummary;
 }
+
 
 /* ========================
    COPY SUMMARY TO CLIPBOARD
    ======================== */
+
 const copyBtn = document.getElementById("copySummaryBtn");
+
 if (copyBtn) {
   copyBtn.addEventListener("click", function() {
     const summaryElement = document.getElementById("summary");
     if (!summaryElement) return;
 
-    // If the modern clipboard API is available
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(summaryElement.innerText);
     } else {
-      // Fallback for older browsers
       const selection = window.getSelection();
       const range = document.createRange();
+
       range.selectNodeContents(summaryElement);
       selection.removeAllRanges();
       selection.addRange(range);
+
       try {
         document.execCommand("copy");
       } catch (err) {
-        // Optional: handle any errors if needed
+        console.warn("Copy failed", err);
       }
+
       selection.removeAllRanges();
     }
   });
 }
 
+
 /* ========================
    SEND SUMMARY TO EMAIL
    ======================== */
-document.getElementById("sendEmailBtn").addEventListener("click", function() {
-  const summaryElement = document.getElementById("summary");
-  if (!summaryElement) return;
 
-  const subject = encodeURIComponent("Summary of Self-Evaluation");
-  // Replace .innerText with .innerHTML or any text you want
-  const body = encodeURIComponent(summaryElement.innerText);
+const sendEmailBtn = document.getElementById("sendEmailBtn");
 
-  // Build mailto link
-  const mailtoLink = `mailto:?subject=${subject}&body=${body}`;
+if (sendEmailBtn) {
+  sendEmailBtn.addEventListener("click", function() {
+    const summaryElement = document.getElementById("summary");
+    if (!summaryElement) return;
 
-  // Open mailto link to launch default mail client
-  window.location.href = mailtoLink;
-});
+    const subject = encodeURIComponent("Summary of Self-Evaluation");
+    const body = encodeURIComponent(summaryElement.innerText);
+    const mailtoLink = `mailto:?subject=${subject}&body=${body}`;
+
+    window.location.href = mailtoLink;
+  });
+}
+
 
 /* ========================
    SAVE FILE WITH ANSWERS
    ======================== */
-document.getElementById("downloadHtmlBtn").addEventListener("click", function() {
-  // Clone the entire <html> element
-  const docClone = document.documentElement.cloneNode(true);
 
-  // In the cloned DOM, update all checkboxes to match the user’s current selections
-  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-  const cloneCheckboxes = docClone.querySelectorAll('input[type="checkbox"]');
+const downloadHtmlBtn = document.getElementById("downloadHtmlBtn");
 
-  // Match each real checkbox to its clone, set 'checked' attribute accordingly
-  checkboxes.forEach((original, index) => {
-    const cloned = cloneCheckboxes[index];
-    if (original.checked) {
-      cloned.setAttribute('checked', '');   // Ensures <input ... checked> in the final HTML
-    } else {
-      cloned.removeAttribute('checked');
-    }
+if (downloadHtmlBtn) {
+  downloadHtmlBtn.addEventListener("click", function() {
+    const docClone = document.documentElement.cloneNode(true);
+
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const cloneCheckboxes = docClone.querySelectorAll('input[type="checkbox"]');
+
+    checkboxes.forEach((original, index) => {
+      const cloned = cloneCheckboxes[index];
+
+      if (!cloned) return;
+
+      if (original.checked) {
+        cloned.setAttribute("checked", "");
+      } else {
+        cloned.removeAttribute("checked");
+      }
+    });
+
+    const docString = "<!DOCTYPE html>\n" + docClone.outerHTML;
+
+    const blob = new Blob([docString], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "research_competences.html";
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
   });
-
-  // Convert the cloned DOM to a string (including <!DOCTYPE html>)
-  const docString = "<!DOCTYPE html>\n" + docClone.outerHTML;
-
-  // Create a blob and trigger download
-  const blob = new Blob([docString], { type: "text/html" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = "research_competences.html"; // Name of the downloaded file
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-});
+}
 
 
 /* ========================
    SAVE ANSWERS LOCALLY
    ======================== */
-document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-  // On change, store state in localStorage
-  checkbox.addEventListener('change', () => {
-    saveSelections();
-  });
+
+document.querySelectorAll('input[type="checkbox"][data-level]').forEach(checkbox => {
+  checkbox.addEventListener("change", saveSelections);
 });
 
-// Save all currently checked boxes to local storage
 function saveSelections() {
   const checked = [];
-  document.querySelectorAll('input[type="checkbox"]:checked').forEach(box => {
-    checked.push(box.name + '::' + box.value);
+
+  document.querySelectorAll('input[type="checkbox"][data-level]:checked').forEach(box => {
+    checked.push(box.name + "::" + box.value);
   });
-  localStorage.setItem('savedResearchComp', JSON.stringify(checked));
+
+  localStorage.setItem("savedResearchComp", JSON.stringify(checked));
 }
 
-// On load, restore states if they exist
-window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('savedResearchComp');
-  if (saved) {
-    const savedArr = JSON.parse(saved);
-    savedArr.forEach(item => {
-      const [name, value] = item.split('::');
-      const box = document.querySelector(`input[type="checkbox"][name="${name}"][value="${value}"]`);
-      if (box) box.checked = true;
-    });
-  }
-});
+function restoreSelections() {
+  const saved = localStorage.getItem("savedResearchComp");
+  if (!saved) return;
 
-// Toggle labels
+  const savedArr = JSON.parse(saved);
+
+  savedArr.forEach(item => {
+    const [name, value] = item.split("::");
+    const box = document.querySelector(`input[type="checkbox"][data-level][name="${name}"][value="${value}"]`);
+
+    if (box) {
+      box.checked = true;
+    }
+  });
+}
+
+
+/* ========================
+   SHOW OR HIDE LEVELS
+   ======================== */
+
+const LEVEL_LABEL_CLASSES = [
+  "fundamental",
+  "intermediate",
+  "advanced",
+  "expert"
+];
+
 function toggleLabels(className, show) {
-  document.querySelectorAll('.' + className).forEach(function (el) {
-    el.style.display = show ? '' : 'none';
+  document.querySelectorAll("." + className).forEach(el => {
+    el.style.display = show ? "" : "none";
+  });
+
+  saveLevelVisibility(className, show);
+  syncLevelToggleButtons();
+}
+
+function saveLevelVisibility(className, show) {
+  const visibility = getLevelVisibility();
+
+  visibility[className] = show;
+
+  localStorage.setItem("researchCompLevelVisibility", JSON.stringify(visibility));
+}
+
+function getLevelVisibility() {
+  const saved = localStorage.getItem("researchCompLevelVisibility");
+
+  const defaults = {
+    fundamental: true,
+    intermediate: true,
+    advanced: true,
+    expert: true
+  };
+
+  if (!saved) {
+    return defaults;
+  }
+
+  return {
+    ...defaults,
+    ...JSON.parse(saved)
+  };
+}
+
+function applyLevelVisibility() {
+  const visibility = getLevelVisibility();
+
+  LEVEL_LABEL_CLASSES.forEach(className => {
+    const show = visibility[className] !== false;
+
+    document.querySelectorAll("." + className).forEach(el => {
+      el.style.display = show ? "" : "none";
+    });
+  });
+
+  syncLevelToggleButtons();
+}
+
+function syncLevelToggleButtons() {
+  const visibility = getLevelVisibility();
+
+  document.querySelectorAll("input[type='checkbox'][onchange*='toggleLabels']").forEach(toggle => {
+    const onchange = toggle.getAttribute("onchange");
+    const match = onchange.match(/toggleLabels\(['"]([^'"]+)['"]/);
+
+    if (!match) return;
+
+    const className = match[1];
+
+    toggle.checked = visibility[className] !== false;
   });
 }
+
 
 /* ========================
    COMPETENCE LEVEL SCORES
@@ -2615,6 +2720,7 @@ const LEVEL_SCORES = {
   Advanced: 3,
   Expert: 4
 };
+
 
 /* ========================
    GENERATE SPIDER CHART
@@ -2639,7 +2745,7 @@ function generateSpiderChart() {
     let hasMissingLowerLevel = false;
 
     fieldsets.forEach(fs => {
-      const checkboxes = fs.querySelectorAll("input[type='checkbox']");
+      const checkboxes = fs.querySelectorAll("input[type='checkbox'][data-level]");
 
       checkboxes.forEach(cb => {
         const level = cb.dataset.level;
@@ -2662,7 +2768,6 @@ function generateSpiderChart() {
 
     let avg = count > 0 ? total / count : 0;
 
-    // Cap average if lower-level items are missing.
     if (hasMissingFoundational) {
       avg = Math.min(avg, 2);
     } else if (hasMissingLowerLevel) {
@@ -2672,7 +2777,10 @@ function generateSpiderChart() {
     scores.push(parseFloat(avg.toFixed(2)));
   });
 
-  const ctx = document.getElementById("competenceRadarChart").getContext("2d");
+  const chartElement = document.getElementById("competenceRadarChart");
+  if (!chartElement) return;
+
+  const ctx = chartElement.getContext("2d");
 
   if (window.radarChart instanceof Chart) {
     window.radarChart.destroy();
@@ -2731,38 +2839,64 @@ function generateSpiderChart() {
   });
 }
 
+
 /* ========================
    TOGGLE SPIDER MAP
    ======================== */
 
-document.getElementById("generateSpiderMap").addEventListener("click", () => {
+const generateSpiderMapBtn = document.getElementById("generateSpiderMap");
+
+if (generateSpiderMapBtn) {
+  generateSpiderMapBtn.addEventListener("click", () => {
+    const chart = document.getElementById("competenceRadarChart");
+    const summary = document.getElementById("summary");
+    const button = document.getElementById("generateSpiderMap");
+
+    if (!chart) return;
+
+    const chartIsVisible = chart.style.display === "block";
+
+    if (chartIsVisible) {
+      chart.style.display = "none";
+
+      if (summary) {
+        summary.style.display = "block";
+      }
+
+      button.textContent = "🕸️ MAKE SPIDER MAP";
+    } else {
+      generateSpiderChart();
+
+      chart.style.display = "block";
+
+      if (summary) {
+        summary.style.display = "none";
+      }
+
+      button.textContent = "SHOW SUMMARY";
+    }
+  });
+}
+
+
+/* ========================
+   INITIALIZE PAGE STATE
+   ======================== */
+
+window.addEventListener("DOMContentLoaded", () => {
+  restoreSelections();
+  applyLevelVisibility();
+
   const chart = document.getElementById("competenceRadarChart");
-  const summary = document.getElementById("summary");
-  const button = document.getElementById("generateSpiderMap");
-
-  const chartIsVisible = chart.style.display === "block";
-
-  if (chartIsVisible) {
+  if (chart) {
     chart.style.display = "none";
+  }
 
-    if (summary) {
-      summary.style.display = "block";
-    }
-
-    button.textContent = "🕸️ MAKE SPIDER MAP";
-  } else {
-    generateSpiderChart();
-
-    chart.style.display = "block";
-
-    if (summary) {
-      summary.style.display = "none";
-    }
-
-    button.textContent = "SHOW SUMMARY";
+  const summary = document.getElementById("summary");
+  if (summary) {
+    summary.style.display = "block";
   }
 });
-
 </script>
 
 </body>
