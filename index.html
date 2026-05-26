@@ -223,6 +223,11 @@
     .level-name {
       font-weight: bold;
     }
+
+    .level-muted {
+      color: #999 !important;
+      opacity: 0.65;
+    }
   </style>
 </head>
 <body>
@@ -2717,7 +2722,7 @@ const LEVEL_LABEL_CLASSES = [
 
 function toggleLabels(className, show) {
   document.querySelectorAll("." + className).forEach(el => {
-    el.style.display = show ? "" : "none";
+    el.classList.toggle("level-muted", !show);
   });
 
   saveLevelVisibility(className, show);
