@@ -2358,34 +2358,27 @@
 
 
 
-  <!-- Report Tab: When selected, the summary is generated automatically -->
-  <div id="report" class="tab-content">
-    <div id="title">
-      <h2>Summary of self-evaluation with ResearchComp</h2>
-      <button id="copySummaryBtn">📋 COPY THE SUMMARY</button> 
-      <button id="sendEmailBtn">✉️ EMAIL THE SUMMARY</button> 
-      <button id="downloadHtmlBtn">💾 SAVE FILE WITH ANSWERS</button>
-      <button id="generateSpiderMap">🕸️ MAKE SPIDER MAP</button>
-      <button id="downloadPDF">📕 DOWNLOAD PDF</button>
-    </div>
-    <div id="summary"></div>
-    <div id="missingGroupListTitle"></div>
-    <canvas id="competenceRadarChart" width="400" height="400" style="max-width: 1500px; max-height: 800px; margin-top: 20px;"></canvas>
-    <div id="competenceDetails" style="margin-top: 20px;"></div>
-    <!-- Modal for Question Details -->
-    <div id="questionModal" class="modal hidden">
-       <div class="modal-content">
-          <span id="closeModal" class="close-button">&times;</span>
-          <canvas id="detailRadarChart" width="400" height="400" style="max-width: 1500px; max-height: 800px; margin-top: 20px;"></canvas>
-          <span class="Apple-converted-space">   </span>
-          <div id="missingGroupList" style="max-height: 500px; overflow-y: auto; margin-top: 10px;"></div>
-          <div id="questionList"></div>
-        </div>
-     </div>
+<!-- Report Tab: When selected, the summary is generated automatically -->
+<div id="report" class="tab-content">
+  <div id="title">
+    <h2>Summary of self-evaluation with ResearchComp</h2>
+    <button id="copySummaryBtn">📋 COPY THE SUMMARY</button>
+    <button id="sendEmailBtn">✉️ EMAIL THE SUMMARY</button>
+    <button id="downloadHtmlBtn">💾 SAVE FILE WITH ANSWERS</button>
+    <button id="generateSpiderMap">🕸️ MAKE SPIDER MAP</button>
   </div>
+
+  <div id="summary"></div>
+
+  <canvas
+    id="competenceRadarChart"
+    width="400"
+    height="400"
+    style="display: none; max-width: 1500px; max-height: 800px; margin-top: 20px;">
+  </canvas>
+</div>
   
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>  
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
 <script>
 /* ========================
    TAB SWITCHING + SUMMARY
@@ -2624,192 +2617,6 @@ const LEVEL_SCORES = {
 };
 
 /* ========================
-   COLLECT COMPETENCE DATA
-   ======================== */
-
-function collectCompetenceData() {
-  const categories = [...document.querySelectorAll(".tab-content")]
-    .filter(el => el.id !== "report" && el.id !== "info");
-
-  const data = {};
-
-  categories.forEach(section => {
-    const catId = section.id;
-    const labels = section.querySelectorAll("fieldset");
-
-    let totalScore = 0;
-    let totalItems = 0;
-    let missingLowerLevel = false;
-
-    const fieldDetails = [];
-
-    labels.forEach(group => {
-      const checkboxes = group.querySelectorAll("input[type='checkbox']");
-
-      checkboxes.forEach(cb => {
-        const level = cb.dataset.level;
-        const checked = cb.checked;
-
-        if (checked) {
-          totalScore += LEVEL_SCORES[level];
-        } else if (level === "Foundational") {
-          missingLowerLevel = true;
-        }
-
-        totalItems++;
-
-        fieldDetails.push({
-          text: cb.value,
-          level: level,
-          checked: checked
-        });
-      });
-    });
-
-    const rawAvg = totalItems > 0 ? totalScore / totalItems : 0;
-    const avg = missingLowerLevel ? Math.min(rawAvg, 2) : rawAvg;
-
-    data[catId] = {
-      score: avg.toFixed(2),
-      missing: missingLowerLevel,
-      fields: fieldDetails
-    };
-  });
-
-  return data;
-}
-
-/* ========================
-   SHOW CATEGORY DETAILS
-   ======================== */
-
-function showCategoryDetails(categoryId) {
-  const section = document.getElementById(categoryId);
-  const fieldsets = section.querySelectorAll("fieldset");
-
-  const groupLabels = [];
-  const groupAverages = [];
-  const groupMissingItems = [];
-
-  fieldsets.forEach((fs, i) => {
-    const topic = fs.dataset.topic || `Group ${i + 1}`;
-    const checkboxes = fs.querySelectorAll("input[type='checkbox']");
-
-    let total = 0;
-    let count = 0;
-    let hasMissingFoundational = false;
-    let hasMissingLowerLevel = false;
-
-    const missingItems = [];
-
-    checkboxes.forEach(cb => {
-      const level = cb.dataset.level;
-      const label = cb.value || cb.nextSibling?.textContent?.trim() || "Untitled";
-      const levelValue = LEVEL_SCORES[level] || 0;
-
-      if (cb.checked && level) {
-        total += levelValue;
-        count += 1;
-      } else {
-        missingItems.push(`[${level}] ${label}`);
-
-        if (level === "Foundational") {
-          hasMissingFoundational = true;
-        }
-
-        if (levelValue < 3) {
-          hasMissingLowerLevel = true;
-        }
-      }
-    });
-
-    let avg = count > 0 ? total / count : 0;
-
-    // Cap average if lower-level items are missing.
-    if (hasMissingFoundational) {
-      avg = Math.min(avg, 2);
-    } else if (hasMissingLowerLevel) {
-      avg = Math.min(avg, 3);
-    }
-
-    groupLabels.push(topic);
-    groupAverages.push(avg.toFixed(2));
-    groupMissingItems.push(missingItems);
-  });
-
-  const modal = document.getElementById("questionModal");
-  modal.classList.remove("hidden");
-  modal.style.display = "block";
-
-  const close = document.getElementById("closeModal");
-  close.onclick = () => {
-    modal.style.display = "none";
-  };
-
-  window.onclick = function(event) {
-    if (event.target === modal) {
-      modal.style.display = "none";
-    }
-  };
-
-  const ctx = document.getElementById("detailRadarChart").getContext("2d");
-
-  if (window.detailRadarChart instanceof Chart) {
-    window.detailRadarChart.destroy();
-  }
-
-  window.detailRadarChart = new Chart(ctx, {
-    type: "radar",
-    data: {
-      labels: groupLabels,
-      datasets: [{
-        label: "Adjusted Competence Level",
-        data: groupAverages,
-        fill: true,
-        backgroundColor: "rgba(54, 162, 235, 0.2)",
-        borderColor: "rgba(54, 162, 235, 1)",
-        pointBackgroundColor: "blue",
-        pointRadius: 6,
-        pointHoverRadius: 9
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        r: {
-          min: 0,
-          max: 4,
-          ticks: {
-            stepSize: 1,
-            callback: val => ["", "Found.", "Inter.", "Adv.", "Exp."][val] || val
-          }
-        }
-      },
-      onClick: (e, elements) => {
-        if (elements.length > 0) {
-          const i = elements[0].index;
-          const missingList = groupMissingItems[i];
-
-          const html = missingList.length
-            ? `<ul>${missingList.map(item => `<li style="color:red">${item}</li>`).join("")}</ul>`
-            : `<p style="color:green">No missing items in this group.</p>`;
-
-          document.getElementById("missingGroupList").innerHTML = html;
-        }
-      },
-      plugins: {
-        legend: {
-          display: false
-        }
-      }
-    }
-  });
-
-  document.getElementById("missingGroupList").innerHTML =
-    "<p>Click a point on the chart to view missing items for that group.</p>";
-}
-
-/* ========================
    GENERATE SPIDER CHART
    ======================== */
 
@@ -2918,22 +2725,6 @@ function generateSpiderChart() {
               return `Avg Score: ${val.toFixed(2)} (${level})`;
             }
           }
-        },
-        legend: {
-          onClick: (e, legendItem) => {
-            const index = legendItem.index;
-            const category = labels[index];
-
-            showCategoryDetails(category);
-          }
-        }
-      },
-      onClick: (e, elements) => {
-        if (elements.length > 0) {
-          const i = elements[0].index;
-          const category = labels[i];
-
-          showCategoryDetails(category);
         }
       }
     }
@@ -2948,91 +2739,29 @@ document.getElementById("generateSpiderMap").addEventListener("click", () => {
   const chart = document.getElementById("competenceRadarChart");
   const summary = document.getElementById("summary");
   const button = document.getElementById("generateSpiderMap");
-  const pdfBtn = document.getElementById("downloadPDF");
 
-  document.getElementById("missingGroupListTitle").innerHTML =
-    "<p>Click a point on the chart to view missing items for that group.</p>";
+  const chartIsVisible = chart.style.display === "block";
 
-  if (chart.style.display === "block") {
+  if (chartIsVisible) {
     chart.style.display = "none";
-    pdfBtn.style.display = "none";
 
     if (summary) {
-      summary.classList.remove("hidden");
+      summary.style.display = "block";
     }
 
-    button.textContent = "Generate Spider Map";
+    button.textContent = "🕸️ MAKE SPIDER MAP";
   } else {
     generateSpiderChart();
 
     chart.style.display = "block";
-    pdfBtn.style.display = "inline-block";
 
     if (summary) {
-      summary.classList.add("hidden");
+      summary.style.display = "none";
     }
 
     button.textContent = "SHOW SUMMARY";
   }
 });
-
-/* ========================
-   DOWNLOAD SPIDER MAP PDF
-   ======================== */
-
-document.getElementById("downloadPDF").addEventListener("click", async () => {
-  const { jsPDF } = window.jspdf;
-
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4"
-  });
-
-  const canvas = document.getElementById("competenceRadarChart");
-  const imgData = canvas.toDataURL("image/png");
-
-  pdf.text("Competence Spider Map", 10, 10);
-  pdf.addImage(imgData, "PNG", 10, 20, 180, 180);
-
-  const data = collectCompetenceData();
-
-  let y = 210;
-  pdf.setFontSize(10);
-
-  for (const [category, info] of Object.entries(data)) {
-    pdf.text(
-      `${category.toUpperCase()} (Avg: ${info.score}${info.missing ? " - Lower level missing" : ""})`,
-      10,
-      y
-    );
-
-    y += 5;
-
-    info.fields.forEach(field => {
-      const line = `${field.checked ? "✓" : "✗"} [${field.level}] ${field.text}`;
-
-      pdf.text(line.substring(0, 100), 15, y);
-
-      y += 5;
-
-      if (y > 280) {
-        pdf.addPage();
-        y = 20;
-      }
-    });
-
-    y += 5;
-
-    if (y > 280) {
-      pdf.addPage();
-      y = 20;
-    }
-  }
-
-  pdf.save("competence_spider_map.pdf");
-});
-
 
 </script>
 
