@@ -2579,6 +2579,13 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Toggle labels
+function toggleLabels(className, show) {
+  document.querySelectorAll('.' + className).forEach(function (el) {
+    el.style.display = show ? '' : 'none';
+  });
+}
 </script>
 
 </body>
