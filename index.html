@@ -2722,7 +2722,11 @@ const LEVEL_LABEL_CLASSES = [
 
 function toggleLabels(className, show) {
   document.querySelectorAll("." + className).forEach(el => {
-    el.classList.toggle("level-muted", !show);
+    if (el.classList.contains("level-name")) {
+      el.classList.toggle("level-muted", !show);
+    } else {
+      el.style.display = show ? "" : "none";
+    }
   });
 
   saveLevelVisibility(className, show);
